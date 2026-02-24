@@ -22,6 +22,10 @@
   .hidden { display: none; }
   #timer { font-family: 'IBM Plex Mono', monospace; font-size: 64px; margin: 20px 0; font-weight: 500; }
   .status { color: var(--recording); font-size: 12px; font-weight: 600; margin-bottom: 20px; }
+  .status.paused { color: var(--accent); }
+  .btn-pause { width: 100%; background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 12px; padding: 18px; font-weight: 600; font-size: 16px; cursor: pointer; transition: background 0.2s; margin-bottom: 12px; }
+  .btn-pause:hover { background: rgba(232, 255, 71, 0.08); }
+  .btn-pause:active { transform: scale(0.98); }
 </style>
 </head>
 <body>
@@ -36,6 +40,7 @@
   <div id="step2" class="card hidden">
     <div id="recordStatus" class="status">● ИДЕТ ЗАПИСЬ</div>
     <div id="timer">00:00</div>
+    <button id="pauseBtn" class="btn-pause" onclick="togglePause()">⏸ ПАУЗА</button>
     <button class="btn" style="background: #ff4747; color: white;" onclick="stopRecording()">ЗАВЕРШИТЬ И ОТПРАВИТЬ</button>
   </div>
 
@@ -49,6 +54,7 @@
     let audioChunks = [];
     let seconds = 0;
     let timerInterval;
+    let isPaused = false;
     
     // Ссылка на ваш НОВЫЙ n8n аккаунт:
     const webhookUrl = "https://yoanbonny.app.n8n.cloud/webhook/9accf4f9-84f9-431f-9acd-3aa18899585f";
@@ -73,6 +79,30 @@
           document.getElementById('timer').textContent = `${m}:${s}`;
         }, 1000);
       }).catch(err => alert('Ошибка доступа к микрофону'));
+    }
+
+    function togglePause() {
+      if (!mediaRecorder) return;
+      if (isPaused) {
+        mediaRecorder.resume();
+        timerInterval = setInterval(() => {
+          seconds++;
+          let m = Math.floor(seconds/60).toString().padStart(2,'0');
+          let s = (seconds%60).toString().padStart(2,'0');
+          document.getElementById('timer').textContent = `${m}:${s}`;
+        }, 1000);
+        document.getElementById('recordStatus').textContent = '● ИДЕТ ЗАПИСЬ';
+        document.getElementById('recordStatus').classList.remove('paused');
+        document.getElementById('pauseBtn').textContent = '⏸ ПАУЗА';
+        isPaused = false;
+      } else {
+        mediaRecorder.pause();
+        clearInterval(timerInterval);
+        document.getElementById('recordStatus').textContent = '⏸ ПАУЗА';
+        document.getElementById('recordStatus').classList.add('paused');
+        document.getElementById('pauseBtn').textContent = '▶ ПРОДОЛЖИТЬ';
+        isPaused = true;
+      }
     }
 
     function stopRecording() {
